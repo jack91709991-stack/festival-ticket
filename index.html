@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自治会お祭り チケット引換管理システム</title>
+  <meta name="description" content="自治会のお祭りにおける前売りチケットの引換状況をQRコードおよび手動検索でリアルタイムに管理・同期するアプリ。">
+  <!-- PWA Settings -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0f1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <!-- Font Outfit & M PLUS 1p -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=M+PLUS+1p:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="index.css">
+  
+  <!-- QR Code Library html5-qrcode -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo">
+        <i class="fa-solid fa-ticket-simple neon-icon"></i>
+        <h1>お祭りチケット<span>引換管理</span></h1>
+      </div>
+      <div class="status-indicator" id="db-mode-indicator">
+        <span class="indicator-dot"></span>
+        <span class="indicator-text">模擬DBモード</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="app-content">
+    
+    <!-- Tab 1: Scan Screen -->
+    <section id="tab-scan" class="tab-panel active">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-qrcode"></i> QRコードスキャン</h2>
+        <p class="panel-desc">チケットのQRコードをカメラにかざしてください</p>
+      </div>
+      
+      <div class="scanner-card">
+        <div class="camera-controls">
+          <label for="camera-select"><i class="fa-solid fa-camera"></i> カメラ切り替え:</label>
+          <select id="camera-select" class="form-select">
+            <option value="">カメラを検出中...</option>
+          </select>
+        </div>
+        
+        <div class="scanner-viewport">
+          <div id="reader"></div>
+          <div class="scan-laser"></div>
+        </div>
+        
+        <div class="scan-buttons">
+          <button id="btn-start-scan" class="btn btn-primary"><i class="fa-solid fa-play"></i> スキャン開始</button>
+          <button id="btn-stop-scan" class="btn btn-secondary" disabled><i class="fa-solid fa-stop"></i> 停止</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Manual Search & Exchange Screen -->
+    <section id="tab-search" class="tab-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-magnifying-glass"></i> 参加者検索・引換</h2>
+        <p class="panel-desc">氏名、フリガナ、電話番号、班名で検索できます</p>
+      </div>
+
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="例: 1-3班, ヤマダ, 090..." autocomplete="off">
+          <button id="btn-clear-search" class="btn-clear"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+
+      <div class="results-container" id="search-results">
+        <div class="empty-state">
+          <i class="fa-solid fa-users"></i>
+          <p>検索ワードを入力してください</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Manual Registration Screen -->
+    <section id="tab-register" class="tab-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-user-plus"></i> 当日新規登録</h2>
+        <p class="panel-desc">紙の申込や当日急遽追加された参加者を登録します</p>
+      </div>
+
+      <div class="form-card">
+        <form id="register-form" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="reg-ban"><span class="required">*</span> 班名</label>
+              <input type="text" id="reg-ban" placeholder="例: 1-3班" required pattern="^\d+-\d+班$">
+              <span class="error-tip">「○-○班」の形式で入力してください（数字は半角・全角対応）</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="reg-name"><span class="required">*</span> 氏名</label>
+              <input type="text" id="reg-name" placeholder="例: 山田 太郎" required>
+              <span class="error-tip">氏名を入力してください</span>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-kana"><span class="required">*</span> フリガナ</label>
+              <input type="text" id="reg-kana" placeholder="例: ヤマダ タロウ" required>
+              <span class="error-tip">フリガナを入力してください</span>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-phone"><span class="required">*</span> 電話番号</label>
+              <input type="tel" id="reg-phone" placeholder="例: 09012345678 (ハイフンなし)" required>
+              <span class="error-tip">電話番号をハイフンなしで入力してください</span>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-tickets"><span class="required">*</span> チケット枚数</label>
+              <input type="number" id="reg-tickets" value="1" min="1" required>
+              <span class="error-tip">1以上の数値を入力してください</span>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="reg-notes">備考</label>
+              <textarea id="reg-notes" rows="2" placeholder="特記事項があれば入力してください"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="btn-reg-only" class="btn btn-secondary-neon"><i class="fa-solid fa-save"></i> 登録のみ (未使用)</button>
+            <button type="button" id="btn-reg-exchange" class="btn btn-primary"><i class="fa-solid fa-ticket-simple"></i> 登録 ＆ 引換完了</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Tab 4: Dashboard & Settings Screen -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-chart-simple"></i> 状況・システム設定</h2>
+        <p class="panel-desc">全体の引き換え状況の確認と、データベース連携設定</p>
+      </div>
+
+      <!-- Dashboard Stats -->
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <span class="stat-label">総申込数</span>
+          <span class="stat-value" id="stat-total">0</span>
+        </div>
+        <div class="stat-card success-border">
+          <span class="stat-label text-success">引換済</span>
+          <span class="stat-value text-success" id="stat-exchanged">0</span>
+        </div>
+        <div class="stat-card warning-border">
+          <span class="stat-label text-warning">未引換</span>
+          <span class="stat-value text-warning" id="stat-remaining">0</span>
+        </div>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-info">
+          <span>引き換え進捗</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Settings Form -->
+      <div class="settings-card">
+        <h3><i class="fa-solid fa-cloud-arrow-up"></i> Googleスプレッドシート連携</h3>
+        <div class="form-group">
+          <label for="gas-url">GAS Web App URL</label>
+          <input type="url" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+          <p class="input-helper">※GAS Web APIのURLを入力して「設定を保存」すると、クラウド連携モードになります。</p>
+        </div>
+
+        <div class="settings-actions">
+          <button id="btn-save-settings" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> 設定を保存</button>
+          <button id="btn-sync-now" class="btn btn-success" disabled><i class="fa-solid fa-rotate"></i> スプレッドシートと同期</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3><i class="fa-solid fa-screwdriver-wrench"></i> 開発・デモ用ツール</h3>
+        <p class="tool-desc">アプリのテストを行うために、LocalStorageにデモ用テストデータを10件追加します。</p>
+        <button id="btn-init-mock" class="btn btn-danger-neon"><i class="fa-solid fa-database"></i> 模擬データ初期化 (全クリア＆デモ追加)</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Tab Bar -->
+  <nav class="app-navbar">
+    <button class="nav-item active" data-tab="tab-scan">
+      <i class="fa-solid fa-qrcode"></i>
+      <span>スキャン</span>
+    </button>
+    <button class="nav-item" data-tab="tab-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>検索・引換</span>
+    </button>
+    <button class="nav-item" data-tab="tab-register">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>当日登録</span>
+    </button>
+    <button class="nav-item" data-tab="tab-settings">
+      <i class="fa-solid fa-chart-simple"></i>
+      <span>状況・設定</span>
+    </button>
+  </nav>
+
+  <!-- Fullscreen Scan Overlay (Result Display) -->
+  <div id="scan-overlay" class="scan-overlay hidden">
+    <div class="overlay-card">
+      <div class="overlay-icon-wrapper">
+        <i class="fa-solid fa-check" id="overlay-icon"></i>
+      </div>
+      <h2 id="overlay-title">判定中...</h2>
+      
+      <div class="overlay-details" id="overlay-details">
+        <!-- Details dynamically populated -->
+      </div>
+      
+      <button id="btn-close-overlay" class="btn btn-overlay-close">閉じる</button>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

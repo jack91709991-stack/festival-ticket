@@ -1,0 +1,24 @@
+{
+  "name": "自治会お祭り チケット引換管理システム",
+  "short_name": "お祭りチケット引換",
+  "description": "自治会のお祭りにおける前売りチケットの引換状況をQRコードおよび手動検索でリアルタイムに管理・同期するPWAアプリ。",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#060b16",
+  "theme_color": "#0a0f1d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

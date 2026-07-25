@@ -14,6 +14,7 @@ const state = {
   activeTab: 'tab-scan',
   scanner: null,
   isScanning: false,
+  isProcessingScan: false,
   audioCtx: null
 };
 
@@ -476,13 +477,12 @@ function stopScanner() {
 }
 
 async function onScanSuccess(decodedText, decodedResult) {
-  // Pause scanning to process overlay
-  if (state.scanner) {
-    // Instead of stopping, we just ignore scans while overlay is visible
-    if (!document.getElementById('scan-overlay').classList.contains('hidden')) {
-      return;
-    }
+  // Ignore scans if we are already processing a scan or if the overlay is visible
+  if (state.isProcessingScan || !document.getElementById('scan-overlay').classList.contains('hidden')) {
+    return;
   }
+
+  state.isProcessingScan = true; // Lock scanning process
 
   const ticketId = decodedText.trim();
   const result = await exchangeTicket(ticketId);
@@ -568,6 +568,9 @@ function closeOverlay() {
   const overlay = document.getElementById('scan-overlay');
   overlay.classList.add('hidden');
   if (state.overlayTimer) clearTimeout(state.overlayTimer);
+  
+  // Unlock scanning process when overlay is closed
+  state.isProcessingScan = false;
 }
 
 // Manual Search & Exchange Logic

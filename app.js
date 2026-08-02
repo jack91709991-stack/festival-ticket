@@ -398,8 +398,8 @@ function renderApplicantList() {
     return;
   }
 
-  // Sort by ID (Ticket ID) ascending
-  const sortedTickets = [...tickets].sort((a, b) => a.id.localeCompare(b.id));
+  // Sort by ID (Ticket ID) ascending (safe fallback for missing IDs)
+  const sortedTickets = [...tickets].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
 
   // Filter by status criteria
   let filteredTickets = sortedTickets;

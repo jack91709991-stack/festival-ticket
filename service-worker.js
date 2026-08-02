@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fes-ticket-v2';
+const CACHE_NAME = 'fes-ticket-v3';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',

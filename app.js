@@ -339,10 +339,98 @@ function updateDashboard() {
   document.getElementById('progress-percent').textContent = `${percent}%`;
   document.getElementById('progress-fill').style.width = `${percent}%`;
   
-  // Refresh search results if on search panel
+  // Refresh views
   if (state.activeTab === 'tab-search') {
     renderSearchResults();
   }
+  renderApplicantList();
+}
+
+function renderApplicantList() {
+  const tbody = document.getElementById('applicant-list-tbody');
+  if (!tbody) return;
+
+  const tickets = state.tickets;
+
+  // Calculate summary stats
+  const totalHouseholds = tickets.length;
+  const totalTickets = tickets.reduce((sum, t) => sum + (t.tickets || 0), 0);
+  
+  let unusedCount = 0;
+  let partialCount = 0;
+  let completedCount = 0;
+
+  tickets.forEach(t => {
+    const exc = t.exchanged_count || 0;
+    const app = t.tickets || 1;
+    if (t.status === '未使用') {
+      unusedCount += app;
+    } else if (t.status === '一部引換済') {
+      partialCount += exc;
+      unusedCount += (app - exc);
+    } else if (t.status === '引換済') {
+      completedCount += app;
+    }
+  });
+
+  const totalCountEl = document.getElementById('list-total-count');
+  const unusedCountEl = document.getElementById('list-unused-count');
+  const partialCountEl = document.getElementById('list-partial-count');
+  const exchangedCountEl = document.getElementById('list-exchanged-count');
+
+  if (totalCountEl) totalCountEl.textContent = `総申込: ${totalHouseholds}世帯 / ${totalTickets}枚`;
+  if (unusedCountEl) unusedCountEl.textContent = `未使用: ${unusedCount}枚`;
+  if (partialCountEl) partialCountEl.textContent = `一部引換: ${partialCount}枚`;
+  if (exchangedCountEl) exchangedCountEl.textContent = `完了: ${completedCount}枚`;
+
+  if (tickets.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+          <i class="fa-solid fa-folder-open" style="font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.3;"></i>
+          申込データがありません
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Sort by ID (Ticket ID) ascending
+  const sortedTickets = [...tickets].sort((a, b) => a.id.localeCompare(b.id));
+
+  tbody.innerHTML = '';
+  sortedTickets.forEach(ticket => {
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-id', ticket.id);
+    
+    let statusClass = '';
+    if (ticket.status === '未使用') {
+      statusClass = 'unused';
+    } else if (ticket.status === '一部引換済') {
+      statusClass = 'partial';
+    }
+    
+    const remaining = ticket.tickets - (ticket.exchanged_count || 0);
+
+    tr.innerHTML = `
+      <td style="padding: 14px 8px;"><span class="badge badge-status ${statusClass}">${ticket.status}</span></td>
+      <td style="padding: 14px 8px; font-weight: 600;">${ticket.ban}</td>
+      <td style="padding: 14px 8px;">
+        <div style="font-weight: 700; color: var(--text-primary);">${ticket.name}</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">${ticket.kana}</div>
+      </td>
+      <td class="text-center" style="padding: 14px 8px; font-weight: 700;">${ticket.tickets}</td>
+      <td class="text-center" style="padding: 14px 8px; color: var(--color-neon-green); font-weight: 700;">${ticket.exchanged_count || 0}</td>
+      <td class="text-center" style="padding: 14px 8px; color: ${remaining > 0 ? 'var(--color-neon-blue)' : 'var(--text-muted)'}; font-weight: 700;">${remaining}</td>
+    `;
+
+    tr.addEventListener('click', () => {
+      initAudio();
+      openExchangeInput(ticket.id);
+    });
+
+    tbody.appendChild(tr);
+  });
 }
 
 function updateIndicatorStatus(status) {
@@ -401,6 +489,8 @@ function switchTab(tabId) {
   // Refresh search input visibility and search when entering tab
   if (tabId === 'tab-search') {
     renderSearchResults();
+  } else if (tabId === 'tab-list') {
+    renderApplicantList();
   }
 }
 

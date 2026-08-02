@@ -93,7 +93,42 @@
       </div>
     </section>
 
-    <!-- Tab 3: Manual Registration Screen -->
+    <!-- Tab 3: Applicant List -->
+    <section id="tab-list" class="tab-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-list-ol"></i> 申込者一覧</h2>
+        <p class="panel-desc">事前登録および当日追加された全員の申込状況リストです。</p>
+      </div>
+
+      <div class="card">
+        <div class="list-summary-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+          <span class="badge badge-ban" id="list-total-count">総申込: --世帯 / --枚</span>
+          <span class="badge badge-status unused" id="list-unused-count">未使用: --枚</span>
+          <span class="badge badge-status partial" id="list-partial-count">一部引換: --枚</span>
+          <span class="badge badge-status" id="list-exchanged-count" style="background-color: rgba(248, 113, 113, 0.15); color: var(--color-neon-red); border: 1px solid rgba(248, 113, 113, 0.2);">完了: --枚</span>
+        </div>
+
+        <div class="table-container" style="overflow-x: auto; width: 100%;">
+          <table class="applicant-table" id="applicant-list-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.85rem;">
+                <th style="padding: 12px 8px;">ステータス</th>
+                <th style="padding: 12px 8px;">班名</th>
+                <th style="padding: 12px 8px;">氏名</th>
+                <th class="text-center" style="padding: 12px 8px; text-align: center;">申込</th>
+                <th class="text-center" style="padding: 12px 8px; text-align: center;">引換</th>
+                <th class="text-center" style="padding: 12px 8px; text-align: center;">残数</th>
+              </tr>
+            </thead>
+            <tbody id="applicant-list-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Manual Registration Screen -->
     <section id="tab-register" class="tab-panel">
       <div class="panel-header">
         <h2><i class="fa-solid fa-user-plus"></i> 当日新規登録</h2>
@@ -213,6 +248,10 @@
     <button class="nav-item" data-tab="tab-search">
       <i class="fa-solid fa-magnifying-glass"></i>
       <span>検索・引換</span>
+    </button>
+    <button class="nav-item" data-tab="tab-list">
+      <i class="fa-solid fa-list-ol"></i>
+      <span>申込者一覧</span>
     </button>
     <button class="nav-item" data-tab="tab-register">
       <i class="fa-solid fa-user-plus"></i>

@@ -961,6 +961,54 @@ body.scanning .scan-laser {
   padding: 12px;
 }
 
+/* Applicant Table Styling */
+.applicant-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.applicant-table th {
+  padding: 12px 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-color);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.applicant-table td {
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.applicant-table tbody tr {
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.applicant-table tbody tr:hover {
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.applicant-table tbody tr:hover td {
+  color: var(--color-neon-blue);
+  text-shadow: 0 0 5px rgba(56, 189, 248, 0.3);
+}
+
+.applicant-table .text-center {
+  text-align: center;
+}
+
+.applicant-table .badge {
+  display: inline-block;
+  text-align: center;
+  min-width: 75px;
+}
+
 /* Responsive Grid Adjustments */
 @media (max-width: 580px) {
   .form-grid {

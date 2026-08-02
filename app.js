@@ -20,16 +20,16 @@ const state = {
 
 // Initial Mock Data
 const MOCK_DATA = [
-  { id: 'FES-0001', ban: '1-1班', name: '自治会 太郎', kana: 'ジチカイ タロウ', phone: '09012345678', tickets: 2, status: '未使用', exchange_time: '', method: 'デジタル', notes: '引換券発送済' },
-  { id: 'FES-0002', ban: '1-2班', name: '佐藤 花子', kana: 'サトウ ハナコ', phone: '08098765432', tickets: 1, status: '引換済', exchange_time: '2026-07-08 10:30:15', method: 'デジタル', notes: '' },
-  { id: 'FES-0003', ban: '2-1班', name: '鈴木 一郎', kana: 'スズキ イチロー', phone: '09011112222', tickets: 3, status: '未使用', exchange_time: '', method: 'アナログ', notes: '紙受付' },
-  { id: 'FES-0004', ban: '2-2班', name: '高橋 二郎', kana: 'タカハシ ジロウ', phone: '09033334444', tickets: 1, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
-  { id: 'FES-0005', ban: '3-1班', name: '田中 三郎', kana: 'タナカ サブロウ', phone: '09055556666', tickets: 2, status: '引換済', exchange_time: '2026-07-08 09:15:00', method: 'アナログ', notes: '' },
-  { id: 'FES-0006', ban: '3-2班', name: '渡辺 陽子', kana: 'ワタナベ ヨウコ', phone: '09077778888', tickets: 4, status: '未使用', exchange_time: '', method: 'デジタル', notes: '大人2人子供2人' },
-  { id: 'FES-0007', ban: '4-1班', name: '伊藤 健', kana: 'イトウ ケン', phone: '09099990000', tickets: 1, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
-  { id: 'FES-0008', ban: '4-2班', name: '山本 恵', kana: 'ヤマモト メグミ', phone: '08022223333', tickets: 3, status: '未使用', exchange_time: '', method: 'アナログ', notes: '' },
-  { id: 'FES-0009', ban: '5-1班', name: '中村 拓也', kana: 'ナカムラ タクヤ', phone: '08044445555', tickets: 2, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
-  { id: 'FES-0010', ban: '5-2班', name: '小林 真一', kana: 'コバヤシ シンイチ', phone: '08066667777', tickets: 1, status: '未使用', exchange_time: '', method: '当日手動追加', notes: '受付テントにて登録' }
+  { id: 'FES-0001', ban: '1-1班', name: '自治会 太郎', kana: 'ジチカイ タロウ', phone: '09012345678', tickets: 2, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'デジタル', notes: '引換券発送済' },
+  { id: 'FES-0002', ban: '1-2班', name: '佐藤 花子', kana: 'サトウ ハナコ', phone: '08098765432', tickets: 1, exchanged_count: 1, status: '引換済', exchange_time: '2026-07-08 10:30:15', method: 'デジタル', notes: '' },
+  { id: 'FES-0003', ban: '2-1班', name: '鈴木 一郎', kana: 'スズキ イチロー', phone: '09011112222', tickets: 3, exchanged_count: 1, status: '一部引換済', exchange_time: '2026-07-08 11:00:00', method: 'アナログ', notes: '3枚中1枚のみ先行引換済' },
+  { id: 'FES-0004', ban: '2-2班', name: '高橋 二郎', kana: 'タカハシ ジロウ', phone: '09033334444', tickets: 1, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
+  { id: 'FES-0005', ban: '3-1班', name: '田中 三郎', kana: 'タナカ サブロウ', phone: '09055556666', tickets: 2, exchanged_count: 2, status: '引換済', exchange_time: '2026-07-08 09:15:00', method: 'アナログ', notes: '' },
+  { id: 'FES-0006', ban: '3-2班', name: '渡辺 陽子', kana: 'ワタナベ ヨウコ', phone: '09077778888', tickets: 4, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'デジタル', notes: '大人2人子供2人' },
+  { id: 'FES-0007', ban: '4-1班', name: '伊藤 健', kana: 'イトウ ケン', phone: '09099990000', tickets: 1, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
+  { id: 'FES-0008', ban: '4-2班', name: '山本 恵', kana: 'ヤマモト メグミ', phone: '08022223333', tickets: 3, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'アナログ', notes: '' },
+  { id: 'FES-0009', ban: '5-1班', name: '中村 拓也', kana: 'ナカムラ タクヤ', phone: '08044445555', tickets: 2, exchanged_count: 0, status: '未使用', exchange_time: '', method: 'デジタル', notes: '' },
+  { id: 'FES-0010', ban: '5-2班', name: '小林 真一', kana: 'コバヤシ シンイチ', phone: '08066667777', tickets: 1, exchanged_count: 0, status: '未使用', exchange_time: '', method: '当日手動追加', notes: '受付テントにて登録' }
 ];
 
 // Initialize Audio Context on demand
@@ -167,16 +167,30 @@ async function fetchWithTimeout(resource, options = {}) {
 }
 
 // Update DB status to exchanged
-async function exchangeTicket(ticketId) {
+async function exchangeTicket(ticketId, exchangeCount) {
   const ticket = state.tickets.find(t => t.id === ticketId);
   if (!ticket) return { success: false, reason: 'not_found' };
   
-  if (ticket.status === '引換済') {
+  const remaining = ticket.tickets - (ticket.exchanged_count || 0);
+  if (remaining <= 0) {
     return { success: false, reason: 'already_exchanged', ticket };
+  }
+  
+  if (exchangeCount > remaining) {
+    return { success: false, reason: 'exceeds_remaining', ticket };
   }
 
   const datetime = getFormattedDatetime();
+  const newExchangedCount = (ticket.exchanged_count || 0) + exchangeCount;
   
+  // Decide status
+  let newStatus = '未使用';
+  if (newExchangedCount === ticket.tickets) {
+    newStatus = '引換済';
+  } else if (newExchangedCount > 0) {
+    newStatus = '一部引換済';
+  }
+
   if (state.gasUrl) {
     updateIndicatorStatus('syncing');
     try {
@@ -188,6 +202,7 @@ async function exchangeTicket(ticketId) {
         body: JSON.stringify({
           action: 'exchange',
           id: ticketId,
+          exchange_count: exchangeCount,
           exchange_time: datetime
         }),
         timeout: 2500
@@ -197,8 +212,9 @@ async function exchangeTicket(ticketId) {
       
       if (result && !result.success) {
         if (result.reason === 'already_exchanged') {
-          // Cloud database says it was already exchanged! Update local record with the cloud values.
-          ticket.status = '引換済';
+          // Cloud database says it was already exchanged (e.g. by another client). Update local record with the cloud values.
+          ticket.status = result.status || '引換済';
+          ticket.exchanged_count = parseInt(result.exchanged_count, 10) || ticket.tickets;
           ticket.exchange_time = result.exchange_time || datetime;
           if (result.name) ticket.name = result.name;
           if (result.ban) ticket.ban = result.ban;
@@ -224,7 +240,8 @@ async function exchangeTicket(ticketId) {
   }
   
   // Local update (falls back here if GAS request was successful or timed out/failed)
-  ticket.status = '引換済';
+  ticket.status = newStatus;
+  ticket.exchanged_count = newExchangedCount;
   ticket.exchange_time = datetime;
   saveDatabaseToLocalStorage();
   updateDashboard();
@@ -283,6 +300,7 @@ async function syncWithGAS() {
         kana: row.kana || '',
         phone: row.phone || '',
         tickets: parseInt(row.tickets, 10) || 1,
+        exchanged_count: parseInt(row.exchanged_count, 10) || 0,
         status: row.status || '未使用',
         exchange_time: row.exchange_time || '',
         method: row.method || '',
@@ -476,6 +494,121 @@ function stopScanner() {
   }
 }
 
+function openExchangeInput(ticketId) {
+  const ticket = state.tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+
+  const remaining = ticket.tickets - (ticket.exchanged_count || 0);
+  
+  state.selectedTicketId = ticketId;
+  state.selectedMaxTickets = remaining;
+
+  // Reset counter input value to remaining balance (default to fully exchange the rest)
+  const counterInput = document.getElementById('counter-input');
+  counterInput.value = remaining;
+
+  // Update minus/plus buttons state
+  updateCounterButtons(remaining, remaining);
+
+  // Open overlay in 'input' mode
+  showOverlay('input', '引換枚数の入力', [
+    { label: 'チケットID', value: ticket.id },
+    { label: '氏名', value: ticket.name },
+    { label: '班名', value: ticket.ban },
+    { label: '申込枚数', value: `${ticket.tickets} 枚` },
+    { label: '引換済枚数', value: `${ticket.exchanged_count || 0} 枚` },
+    { label: '残りの枚数', value: `${remaining} 枚` },
+    { label: '備考', value: ticket.notes || 'なし' }
+  ]);
+}
+
+function updateCounterButtons(currentVal, maxVal) {
+  const btnMinus = document.getElementById('btn-counter-minus');
+  const btnPlus = document.getElementById('btn-counter-plus');
+  
+  btnMinus.disabled = currentVal <= 1;
+  btnPlus.disabled = currentVal >= maxVal;
+}
+
+function initOverlayControls() {
+  const btnMinus = document.getElementById('btn-counter-minus');
+  const btnPlus = document.getElementById('btn-counter-plus');
+  const counterInput = document.getElementById('counter-input');
+  const btnCancel = document.getElementById('btn-cancel-exchange');
+  const btnConfirm = document.getElementById('btn-confirm-exchange');
+
+  btnMinus.addEventListener('click', () => {
+    let val = parseInt(counterInput.value, 10) || 1;
+    if (val > 1) {
+      val--;
+      counterInput.value = val;
+      updateCounterButtons(val, state.selectedMaxTickets);
+    }
+  });
+
+  btnPlus.addEventListener('click', () => {
+    let val = parseInt(counterInput.value, 10) || 1;
+    if (val < state.selectedMaxTickets) {
+      val++;
+      counterInput.value = val;
+      updateCounterButtons(val, state.selectedMaxTickets);
+    }
+  });
+
+  btnCancel.addEventListener('click', () => {
+    closeOverlay();
+  });
+
+  btnConfirm.addEventListener('click', async () => {
+    const count = parseInt(counterInput.value, 10) || 1;
+    if (count < 1 || count > state.selectedMaxTickets) {
+      alert('無効な引換枚数です。');
+      return;
+    }
+
+    // Disable buttons during transaction
+    btnConfirm.disabled = true;
+    btnCancel.disabled = true;
+
+    try {
+      const result = await exchangeTicket(state.selectedTicketId, count);
+      
+      if (result.success) {
+        playBeep('success');
+        showOverlay('success', '引換完了', [
+          { label: 'チケットID', value: result.ticket.id },
+          { label: '氏名', value: result.ticket.name },
+          { label: '班名', value: result.ticket.ban },
+          { label: '今回引換数', value: `${count} 枚` },
+          { label: '引換済累計', value: `${result.ticket.exchanged_count} 枚 / 申込 ${result.ticket.tickets} 枚` },
+          { label: '残りの枚数', value: `${result.ticket.tickets - result.ticket.exchanged_count} 枚` }
+        ]);
+      } else if (result.reason === 'already_exchanged') {
+        playBeep('warning');
+        showOverlay('warning', '重複引換（警告）', [
+          { label: 'チケットID', value: result.ticket.id },
+          { label: '氏名', value: result.ticket.name },
+          { label: '班名', value: result.ticket.ban },
+          { label: '申込枚数', value: `${result.ticket.tickets} 枚` },
+          { label: '引換済累計', value: `${result.ticket.exchanged_count} 枚` },
+          { label: '備考', value: 'すべてのチケットが引換済です。' }
+        ]);
+      } else {
+        playBeep('error');
+        showOverlay('error', 'エラーが発生しました', [
+          { label: '理由', value: result.reason || '通信エラー' }
+        ]);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('引換処理中にエラーが発生しました。');
+    } finally {
+      btnConfirm.disabled = false;
+      btnCancel.disabled = false;
+    }
+  });
+}
+
 async function onScanSuccess(decodedText, decodedResult) {
   // Ignore scans if we are already processing a scan or if the overlay is visible
   if (state.isProcessingScan || !document.getElementById('scan-overlay').classList.contains('hidden')) {
@@ -485,37 +618,33 @@ async function onScanSuccess(decodedText, decodedResult) {
   state.isProcessingScan = true; // Lock scanning process
 
   const ticketId = decodedText.trim();
-  const result = await exchangeTicket(ticketId);
+  const ticket = state.tickets.find(t => t.id === ticketId);
 
-  if (result.success) {
-    // Unused -> Exchanged Successfully
-    playBeep('success');
-    showOverlay('success', '引換完了', [
-      { label: 'チケットID', value: result.ticket.id },
-      { label: '氏名', value: result.ticket.name },
-      { label: '班名', value: result.ticket.ban },
-      { label: 'チケット枚数', value: `${result.ticket.tickets} 枚` },
-      { label: '受付方法', value: result.ticket.method },
-      { label: '備考', value: result.ticket.notes || 'なし' }
-    ]);
-  } else if (result.reason === 'already_exchanged') {
-    // Duplicate warning
-    playBeep('warning');
-    showOverlay('warning', '重複引換（警告）', [
-      { label: 'チケットID', value: result.ticket.id },
-      { label: '氏名', value: result.ticket.name },
-      { label: '班名', value: result.ticket.ban },
-      { label: 'チケット枚数', value: `${result.ticket.tickets} 枚` },
-      { label: '引換日時', value: result.ticket.exchange_time },
-      { label: '備考', value: result.ticket.notes || 'なし' }
-    ]);
-  } else {
-    // Unregistered (not_found)
+  if (!ticket) {
     playBeep('error');
     showOverlay('error', '無効なコード', [
       { label: 'スキャンデータ', value: ticketId },
       { label: '状態', value: 'スプレッドシートに登録されていません' }
     ]);
+    return;
+  }
+
+  const remaining = ticket.tickets - (ticket.exchanged_count || 0);
+
+  if (remaining <= 0 || ticket.status === '引換済') {
+    // Already fully exchanged
+    playBeep('warning');
+    showOverlay('warning', '重複引換（警告）', [
+      { label: 'チケットID', value: ticket.id },
+      { label: '氏名', value: ticket.name },
+      { label: '班名', value: ticket.ban },
+      { label: '申込枚数', value: `${ticket.tickets} 枚` },
+      { label: '引換済累計', value: `${ticket.exchanged_count || 0} 枚` },
+      { label: '備考', value: 'すでにすべてのチケットの引換が完了しています。' }
+    ]);
+  } else {
+    // Open count input modal! (No beep yet)
+    openExchangeInput(ticketId);
   }
 }
 
@@ -528,6 +657,10 @@ function showOverlay(type, title, details) {
   const titleEl = document.getElementById('overlay-title');
   const detailsEl = document.getElementById('overlay-details');
   const icon = document.getElementById('overlay-icon');
+  
+  const counterWrapper = document.getElementById('overlay-counter-wrapper');
+  const actionButtons = document.getElementById('overlay-action-buttons');
+  const closeBtn = document.getElementById('btn-close-overlay');
 
   // Set classes
   overlay.className = `scan-overlay ${type}`;
@@ -539,6 +672,8 @@ function showOverlay(type, title, details) {
     icon.classList.add('fa-check');
   } else if (type === 'warning') {
     icon.classList.add('fa-triangle-exclamation');
+  } else if (type === 'input') {
+    icon.classList.add('fa-ticket-simple');
   } else {
     icon.classList.add('fa-xmark');
   }
@@ -554,6 +689,17 @@ function showOverlay(type, title, details) {
     `;
     detailsEl.appendChild(div);
   });
+
+  // Toggle Visibility based on state
+  if (type === 'input') {
+    counterWrapper.style.display = 'flex';
+    actionButtons.style.display = 'flex';
+    closeBtn.style.display = 'none';
+  } else {
+    counterWrapper.style.display = 'none';
+    actionButtons.style.display = 'none';
+    closeBtn.style.display = 'block';
+  }
 
   overlay.classList.remove('hidden');
 
@@ -633,8 +779,15 @@ function renderSearchResults() {
     const card = document.createElement('div');
     card.className = 'result-card';
 
-    const isUnused = ticket.status === '未使用';
-    const badgeStatusClass = isUnused ? 'unused' : '';
+    const isExchangeable = ticket.status !== '引換済' && (ticket.tickets - (ticket.exchanged_count || 0)) > 0;
+    
+    let badgeStatusClass = '';
+    if (ticket.status === '未使用') {
+      badgeStatusClass = 'unused';
+    } else if (ticket.status === '一部引換済') {
+      badgeStatusClass = 'partial';
+    }
+    
     const badgeStatusText = ticket.status;
 
     card.innerHTML = `
@@ -646,33 +799,29 @@ function renderSearchResults() {
         </div>
         <div class="result-kana">${ticket.kana}</div>
         <div class="result-details-row">
-          <span><i class="fa-solid fa-ticket"></i> ${ticket.tickets}枚</span>
+          <span><i class="fa-solid fa-ticket"></i> 申込: ${ticket.tickets}枚</span>
+          <span><i class="fa-solid fa-check"></i> 引換済: ${ticket.exchanged_count || 0}枚</span>
+          <span><i class="fa-solid fa-clock-rotate-left"></i> 残数: ${ticket.tickets - (ticket.exchanged_count || 0)}枚</span>
+        </div>
+        <div class="result-details-row">
           <span><i class="fa-solid fa-phone"></i> ${ticket.phone}</span>
           <span><i class="fa-solid fa-id-card"></i> ${ticket.id}</span>
         </div>
         ${ticket.notes ? `<div class="result-notes">備考: ${ticket.notes}</div>` : ''}
-        ${!isUnused ? `<div class="result-notes text-success"><i class="fa-solid fa-clock"></i> 引換日時: ${ticket.exchange_time}</div>` : ''}
+        ${ticket.exchange_time ? `<div class="result-notes text-success"><i class="fa-solid fa-clock"></i> 最終引換: ${ticket.exchange_time}</div>` : ''}
       </div>
       <div class="result-action">
-        ${isUnused ? `<button class="btn btn-primary btn-exchange-direct" data-id="${ticket.id}"><i class="fa-solid fa-check"></i> 引換</button>` : ''}
+        ${isExchangeable ? `<button class="btn btn-primary btn-exchange-direct" data-id="${ticket.id}"><i class="fa-solid fa-check"></i> 引換</button>` : ''}
       </div>
     `;
 
-    // Hook click event
-    if (isUnused) {
-      card.querySelector('.btn-exchange-direct').addEventListener('click', async (e) => {
+    // Hook click event to open quantity selector overlay
+    if (isExchangeable) {
+      card.querySelector('.btn-exchange-direct').addEventListener('click', (e) => {
         e.stopPropagation();
         initAudio(); // Initialize audio context on click
         const tId = e.currentTarget.getAttribute('data-id');
-        if (confirm(`${ticket.name} 様のチケット（${ticket.tickets}枚）を引き換えますか？`)) {
-          const res = await exchangeTicket(tId);
-          if (res.success) {
-            playBeep('success');
-            renderSearchResults();
-          } else {
-            alert('引き換えに失敗しました。');
-          }
-        }
+        openExchangeInput(tId);
       });
     }
 
@@ -825,6 +974,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initRegisterForm();
   initSettings();
   initScanner();
+  initOverlayControls(); // Set up counter buttons and confirm/cancel events
 
   // Attach control events for Scanner Tab
   document.getElementById('btn-start-scan').addEventListener('click', startScanner);

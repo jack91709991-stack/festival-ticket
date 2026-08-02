@@ -2,50 +2,39 @@
  * 自治会お祭りチケット引換管理システム - Google Apps Script (GAS) APIスクリプト
  * 
  * 【導入手順】
- * 1. Googleスプレッドシートを新規作成します。
+ * 1. Googleスプレッドシートを開きます。
  * 2. スプレッドシートのメニューから「拡張機能」＞「Apps Script」を開きます。
  * 3. 元からあるコードを消去し、本スクリプト（Code.js）の内容を貼り付けます。
  * 4. エディタ右上にある「デプロイ」＞「新しいデプロイ」をクリックします。
  * 5. 種類の選択で「ウェブアプリ」を選択します。
  * 6. 設定を以下のように指定します:
- *    - 説明: 任意 (例: Ticket API v2)
+ *    - 説明: 任意 (例: Ticket API v3 - 部分引換対応)
  *    - 次のユーザーとして実行: 自分 (あなたのメールアドレス)
- *    - アクセスできるユーザー: 全員 (※全員にしないとアプリから通信できません)
+ *    - アクセスできるユーザー: 全員
  * 7. 「デプロイ」ボタンを押し、表示される「ウェブアプリのURL」をコピーして、アプリの設定画面に貼り付けます。
- * 
- * 【Googleフォーム連携と自動メール送信の設定手順】
- * 1. スプレッドシートのメニューから「挿入」＞「フォーム」で申し込みフォームを作成します。
- * 2. フォームの質問項目に以下を作成します（※質問の表記を完全一致させてください）:
- *    - 「氏名」（一行記述）
- *    - 「フリガナ」（一行記述）
- *    - 「班名」（例: 1-3班 の形式で入力するよう説明を記載）
- *    - 「電話番号」（ハイフンなし）
- *    - 「チケット枚数」（数値入力。スマートにするには回答の検証で「数字」＞「整数」＞「1以上」に制限）
- *    - 「メールアドレス」（メールアドレス収集の設定にするか、テキスト質問で「メールアドレス」を作成）
- *    - 「備考」（複数行記述、任意）
- * 3. GASエディタの左メニューから「トリガー」（目覚まし時計アイコン）をクリックします。
- * 4. 右下の「トリガーを追加」をクリックし、以下のように設定して保存します:
- *    - 実行する関数を選択: onFormSubmit
- *    - 実行するデプロイを選択: ヘッド (Head)
- *    - イベントのソースを選択: スプレッドシートから
- *    - イベントの種類を選択: フォーム送信時
  */
 
 // 「引換マスター」シート名
 var MASTER_SHEET_NAME = "引換マスター";
 
-// マスターシートを取得（存在しない場合は自動作成してヘッダーを設定）
+// マスターシートを取得（存在しない場合は自動作成してヘッダーを設定。既存の場合はK列を自動追加して移行）
 function getMasterSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(MASTER_SHEET_NAME);
+  var headers = ["チケットID", "班名", "氏名", "フリガナ", "電話番号", "チケット枚数", "ステータス", "引換日時", "受付方法", "備考", "引換済枚数"];
+  
   if (!sheet) {
     sheet = ss.insertSheet(MASTER_SHEET_NAME);
-    // ヘッダー行を書き込み
-    var headers = ["チケットID", "班名", "氏名", "フリガナ", "電話番号", "チケット枚数", "ステータス", "引換日時", "受付方法", "備考"];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f4f6");
-    // 初期状態で行を固定
     sheet.setFrozenRows(1);
+  } else {
+    // 移行措置: 現在の列数が11列未満（K列がない）場合、K列にヘッダーを追加
+    var maxCol = sheet.getLastColumn();
+    if (maxCol < headers.length) {
+      sheet.getRange(1, headers.length).setValue(headers[headers.length - 1]);
+      sheet.getRange(1, headers.length).setFontWeight("bold").setBackground("#f3f4f6");
+    }
   }
   return sheet;
 }
@@ -68,7 +57,8 @@ function doPost(e) {
     var action = postData.action;
     
     if (action === 'exchange') {
-      return exchangeTicket(postData.id, postData.exchange_time);
+      var count = parseInt(postData.exchange_count, 10) || 1;
+      return exchangeTicket(postData.id, count, postData.exchange_time);
     } else if (action === 'register') {
       return registerTicket(postData.record);
     }
@@ -79,7 +69,7 @@ function doPost(e) {
   }
 }
 
-// スプレッドシートから全データを取得
+// スプレッドシートから全データを取得（K列「引換済枚数」を読み込み、過去データ互換性を保持）
 function readDatabase() {
   var sheet = getMasterSheet();
   var rows = sheet.getDataRange().getValues();
@@ -89,14 +79,26 @@ function readDatabase() {
     var row = rows[i];
     if (!row[0]) continue; // 空行はスキップ
     
+    var appliedTickets = parseInt(row[5], 10) || 1;
+    var status = row[6].toString();
+    
+    // K列（インデックス10）が存在し空欄でなければ値を使用。空欄の場合はステータスが「引換済」なら申込枚数と同数、そうでなければ0とする
+    var exchangedCount = 0;
+    if (row.length > 10 && row[10] !== "") {
+      exchangedCount = parseInt(row[10], 10);
+    } else if (status === "引換済") {
+      exchangedCount = appliedTickets;
+    }
+    
     data.push({
       id: row[0].toString(),
       ban: row[1].toString(),
       name: row[2].toString(),
       kana: row[3].toString(),
       phone: row[4].toString(),
-      tickets: parseInt(row[5], 10) || 1,
-      status: row[6].toString(),
+      tickets: appliedTickets,
+      exchanged_count: exchangedCount,
+      status: status,
       exchange_time: row[7] ? formatDate(row[7]) : '',
       method: row[8].toString(),
       notes: row[9].toString()
@@ -106,8 +108,8 @@ function readDatabase() {
   return createJsonResponse(data);
 }
 
-// チケットIDを検索し、引換済みに更新（重複チェック付き）
-function exchangeTicket(ticketId, exchangeTime) {
+// チケットIDを検索し、指定された枚数分を引き換える（残数チェックおよびステータス自動判定）
+function exchangeTicket(ticketId, exchangeCount, exchangeTime) {
   var sheet = getMasterSheet();
   var lastRow = sheet.getLastRow();
   
@@ -115,7 +117,8 @@ function exchangeTicket(ticketId, exchangeTime) {
     return createJsonResponse({ success: false, reason: 'Empty database' });
   }
   
-  var range = sheet.getRange(2, 1, lastRow - 1, 10); // A列からJ列まで取得
+  // A列からK列まで一括取得
+  var range = sheet.getRange(2, 1, lastRow - 1, 11);
   var values = range.getValues();
   
   for (var i = 0; i < values.length; i++) {
@@ -123,34 +126,79 @@ function exchangeTicket(ticketId, exchangeTime) {
     if (currentId === ticketId) {
       var rowIndex = i + 2; // 1-indexed & header offset
       
-      // すでに引換済みの場合はエラーレスポンスを返す（重複防止）
+      var appliedTickets = parseInt(values[i][5], 10) || 1;
       var currentStatus = values[i][6].toString();
-      if (currentStatus === '引換済') {
+      
+      // K列（インデックス10）から現在の引換数を取得（過去データ互換対応）
+      var currentExchanged = 0;
+      if (values[i].length > 10 && values[i][10] !== "") {
+        currentExchanged = parseInt(values[i][10], 10);
+      } else if (currentStatus === "引換済") {
+        currentExchanged = appliedTickets;
+      }
+      
+      var remaining = appliedTickets - currentExchanged;
+      
+      // すでに全数引換済みの場合はエラーを返す
+      if (remaining <= 0 || currentStatus === '引換済') {
         var existingTime = values[i][7] ? formatDate(values[i][7]) : '';
         return createJsonResponse({ 
           success: false, 
           reason: 'already_exchanged',
+          status: '引換済',
+          exchanged_count: currentExchanged,
           exchange_time: existingTime,
           name: values[i][2].toString(),
           ban: values[i][1].toString(),
-          tickets: parseInt(values[i][5], 10) || 1,
+          tickets: appliedTickets,
           notes: values[i][9].toString()
         });
       }
       
-      // G列（ステータス）を「引換済」に設定
-      sheet.getRange(rowIndex, 7).setValue('引換済');
+      // 今回の引換数が残数を超えている場合はエラー
+      if (exchangeCount > remaining) {
+        return createJsonResponse({
+          success: false,
+          reason: 'exceeds_remaining',
+          message: '引換数が残数（' + remaining + '枚）を超えています。',
+          status: currentStatus,
+          exchanged_count: currentExchanged,
+          tickets: appliedTickets
+        });
+      }
+      
+      // 新しい累計引換数を計算
+      var newExchanged = currentExchanged + exchangeCount;
+      
+      // ステータスを判定
+      var newStatus = '未使用';
+      if (newExchanged === appliedTickets) {
+        newStatus = '引換済';
+      } else if (newExchanged > 0) {
+        newStatus = '一部引換済';
+      }
+      
+      // G列（ステータス）を更新
+      sheet.getRange(rowIndex, 7).setValue(newStatus);
       // H列（引換日時）に現在時刻を設定
       sheet.getRange(rowIndex, 8).setValue(exchangeTime);
+      // K列（引換済枚数）を更新
+      sheet.getRange(rowIndex, 11).setValue(newExchanged);
       
-      return createJsonResponse({ success: true, id: ticketId });
+      return createJsonResponse({ 
+        success: true, 
+        id: ticketId,
+        status: newStatus,
+        exchanged_count: newExchanged,
+        exchange_time: exchangeTime
+      });
     }
   }
   
   return createJsonResponse({ success: false, reason: 'Ticket ID not found' });
 }
 
-// 手動で新規レコードを追加
+// 新規レコードを追加
 function registerTicket(record) {
   var sheet = getMasterSheet();
   
@@ -164,7 +212,8 @@ function registerTicket(record) {
     record.status,
     record.exchange_time,
     record.method,
-    record.notes
+    record.notes,
+    record.exchanged_count || 0 // K列: 新規登録時は指定がなければ0
   ];
   
   sheet.appendRow(newRow);
@@ -220,7 +269,7 @@ function onFormSubmit(e) {
     // チケットIDを自動生成
     var ticketId = generateNextIdOnSheet(sheet);
     
-    // 引換マスターシートに書き込み
+    // 引換マスターシートに書き込み（K列に0を書き込む）
     var newRow = [
       ticketId,
       ban,
@@ -231,7 +280,8 @@ function onFormSubmit(e) {
       "未使用",      // ステータス初期値
       "",           // 引換日時
       "デジタル",    // 受付方法
-      notes         // 備考
+      notes,        // 備考
+      0             // 引換済枚数 (Col 11)
     ];
     sheet.appendRow(newRow);
     
@@ -275,7 +325,7 @@ function sendConfirmationEmail(email, name, ticketId, ban, tickets, qrBlob) {
       "<div style='background-color:#f3f4f6; padding:15px; border-radius:8px; margin:20px 0;'>" +
         "<table style='width:100%; border-collapse:collapse;'>" +
           "<tr><td style='padding:5px 0; color:#4b5563; width:120px;'><strong>引換用チケットID</strong></td><td>" + ticketId + "</td></tr>" +
-          "<tr><td style='padding:5px 0; color:#4b5563;'><strong>ご登録の班名</strong></td><td>" + ban + "</td></tr>" +
+          "<tr><td style='padding:5px 0; color:#4b5563;'><strong>ご登録 of 班名</strong></td><td>" + ban + "</td></tr>" +
           "<tr><td style='padding:5px 0; color:#4b5563;'><strong>チケット枚数</strong></td><td>" + tickets + " 枚</td></tr>" +
         "</table>" +
       "</div>" +

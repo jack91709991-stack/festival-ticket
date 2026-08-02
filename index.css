@@ -523,6 +523,12 @@ body.scanning .scan-laser {
   border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
+.badge-status.partial {
+  background-color: rgba(251, 146, 60, 0.15);
+  color: var(--color-neon-orange);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+}
+
 .result-details-row {
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -859,6 +865,100 @@ body.scanning .scan-laser {
 }
 .scan-overlay.error h2 {
   color: var(--color-neon-orange);
+}
+
+/* INPUT Overlay State (Partial Exchange Input) */
+.scan-overlay.input {
+  background-color: rgba(10, 25, 47, 0.7); /* Deep dark transparent blue */
+}
+.scan-overlay.input .overlay-card {
+  border: 2px solid var(--color-neon-blue);
+  box-shadow: var(--shadow-neon-blue);
+}
+.scan-overlay.input .overlay-icon-wrapper {
+  background-color: rgba(56, 189, 248, 0.2);
+  color: var(--color-neon-blue);
+  border: 2px solid var(--color-neon-blue);
+  box-shadow: var(--shadow-neon-blue);
+}
+.scan-overlay.input h2 {
+  color: var(--color-neon-blue);
+}
+
+/* Overlay Counter styling */
+.overlay-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.counter-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.counter-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.btn-counter-action {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  color: var(--color-neon-blue);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-speed);
+}
+
+.btn-counter-action:hover:not(:disabled) {
+  border-color: var(--color-neon-blue);
+  box-shadow: var(--shadow-neon-blue);
+  background-color: rgba(56, 189, 248, 0.1);
+}
+
+.btn-counter-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#counter-input {
+  width: 70px;
+  height: 44px;
+  font-family: var(--font-family-base);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+  outline: none;
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.overlay-actions .btn {
+  flex: 1;
+  padding: 12px;
 }
 
 /* Responsive Grid Adjustments */

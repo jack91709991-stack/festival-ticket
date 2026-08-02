@@ -224,7 +224,7 @@
     </button>
   </nav>
 
-  <!-- Fullscreen Scan Overlay (Result Display) -->
+  <!-- Fullscreen Scan Overlay (Result / Input Display) -->
   <div id="scan-overlay" class="scan-overlay hidden">
     <div class="overlay-card">
       <div class="overlay-icon-wrapper">
@@ -236,6 +236,23 @@
         <!-- Details dynamically populated -->
       </div>
       
+      <!-- Counter UI for partial ticket exchange input (Visible only during input mode) -->
+      <div class="overlay-counter" id="overlay-counter-wrapper">
+        <span class="counter-label">今回引き換える枚数</span>
+        <div class="counter-control">
+          <button type="button" id="btn-counter-minus" class="btn-counter-action"><i class="fa-solid fa-minus"></i></button>
+          <input type="number" id="counter-input" value="1" min="1" readonly>
+          <button type="button" id="btn-counter-plus" class="btn-counter-action"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+      
+      <!-- Action buttons for input confirmation -->
+      <div class="overlay-actions" id="overlay-action-buttons">
+        <button id="btn-cancel-exchange" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> キャンセル</button>
+        <button id="btn-confirm-exchange" class="btn btn-primary"><i class="fa-solid fa-check"></i> 引換を確定</button>
+      </div>
+      
+      <!-- Simple close button for result display states -->
       <button id="btn-close-overlay" class="btn btn-overlay-close">閉じる</button>
     </div>
   </div>

@@ -15,6 +15,9 @@ const state = {
   scanner: null,
   isScanning: false,
   isProcessingScan: false,
+  selectedTicketId: null,
+  selectedMaxTickets: 0,
+  listFilter: 'all', // Filter status for applicant list: 'all', '未使用', '一部引換済', '引換済'
   audioCtx: null
 };
 
@@ -398,8 +401,26 @@ function renderApplicantList() {
   // Sort by ID (Ticket ID) ascending
   const sortedTickets = [...tickets].sort((a, b) => a.id.localeCompare(b.id));
 
+  // Filter by status criteria
+  let filteredTickets = sortedTickets;
+  if (state.listFilter !== 'all') {
+    filteredTickets = sortedTickets.filter(t => t.status === state.listFilter);
+  }
+
   tbody.innerHTML = '';
-  sortedTickets.forEach(ticket => {
+  if (filteredTickets.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+          <i class="fa-solid fa-filter" style="font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.3;"></i>
+          該当するステータスの申込情報がありません
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filteredTickets.forEach(ticket => {
     const tr = document.createElement('tr');
     tr.setAttribute('data-id', ticket.id);
     
@@ -455,6 +476,19 @@ function updateIndicatorStatus(status) {
       text.textContent = 'オフライン（ローカル保存）';
     }
   }
+}
+
+// Applicant List Status Filter UI
+function initListFilters() {
+  const filterButtons = document.querySelectorAll('#list-status-filters .btn-filter');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.listFilter = btn.getAttribute('data-filter');
+      renderApplicantList();
+    });
+  });
 }
 
 // Navigation Tabs
@@ -1065,6 +1099,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSettings();
   initScanner();
   initOverlayControls(); // Set up counter buttons and confirm/cancel events
+  initListFilters(); // Set up status filter pills for applicant list
 
   // Attach control events for Scanner Tab
   document.getElementById('btn-start-scan').addEventListener('click', startScanner);

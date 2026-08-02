@@ -1009,6 +1009,41 @@ body.scanning .scan-laser {
   min-width: 75px;
 }
 
+/* List Filter Styling */
+.list-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-filter {
+  padding: 6px 14px;
+  font-family: var(--font-family-base);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  outline: none;
+}
+
+.btn-filter:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-filter.active {
+  color: var(--color-neon-blue);
+  border-color: var(--color-neon-blue);
+  background-color: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+  text-shadow: 0 0 5px rgba(56, 189, 248, 0.4);
+}
+
 /* Responsive Grid Adjustments */
 @media (max-width: 580px) {
   .form-grid {

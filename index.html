@@ -108,6 +108,14 @@
           <span class="badge badge-status" id="list-exchanged-count" style="background-color: rgba(248, 113, 113, 0.15); color: var(--color-neon-red); border: 1px solid rgba(248, 113, 113, 0.2);">完了: --枚</span>
         </div>
 
+        <!-- Status Filter Buttons -->
+        <div class="list-filter-row" id="list-status-filters">
+          <button class="btn-filter active" data-filter="all">すべて</button>
+          <button class="btn-filter" data-filter="未使用">未使用</button>
+          <button class="btn-filter" data-filter="一部引換済">一部引換済</button>
+          <button class="btn-filter" data-filter="引換済">引換済</button>
+        </div>
+
         <div class="table-container" style="overflow-x: auto; width: 100%;">
           <table class="applicant-table" id="applicant-list-table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>

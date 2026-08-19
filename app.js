@@ -103,11 +103,33 @@ function playBeep(type) {
   }
 }
 
+// 班名の日付誤判定（Googleスプレッドシートの仕様による日付変換）を安全に表示用（M-d）に戻す整形関数
+function formatBanDisplay(ban) {
+  if (!ban) return '';
+  const banStr = ban.toString().trim();
+  
+  // ISO 8601 または GMT 表示などの長い日付文字列パターンに合致するかチェック
+  const isIsoDate = banStr.includes('T') && banStr.includes('-') && !isNaN(Date.parse(banStr));
+  const isGmtDate = banStr.includes('GMT') && !isNaN(Date.parse(banStr));
+  
+  if (isIsoDate || isGmtDate) {
+    const date = new Date(banStr);
+    if (!isNaN(date.getTime())) {
+      return `${date.getMonth() + 1}-${date.getDate()}`;
+    }
+  }
+  return banStr;
+}
+
 // Database Operations
 function loadDatabase() {
   const localData = localStorage.getItem('festival_tickets_db');
   if (localData) {
     state.tickets = JSON.parse(localData);
+    // Cleanup any date-like group names from local storage
+    state.tickets.forEach(t => {
+      t.ban = formatBanDisplay(t.ban);
+    });
   } else {
     // Default mock data if empty
     state.tickets = [...MOCK_DATA];
@@ -220,7 +242,7 @@ async function exchangeTicket(ticketId, exchangeCount) {
           ticket.exchanged_count = parseInt(result.exchanged_count, 10) || ticket.tickets;
           ticket.exchange_time = result.exchange_time || datetime;
           if (result.name) ticket.name = result.name;
-          if (result.ban) ticket.ban = result.ban;
+          if (result.ban) ticket.ban = formatBanDisplay(result.ban);
           if (result.tickets) ticket.tickets = result.tickets;
           if (result.notes) ticket.notes = result.notes;
           
@@ -298,7 +320,7 @@ async function syncWithGAS() {
     if (Array.isArray(data)) {
       state.tickets = data.map(row => ({
         id: row.id || '',
-        ban: row.ban || '',
+        ban: formatBanDisplay(row.ban || ''),
         name: row.name || '',
         kana: row.kana || '',
         phone: row.phone || '',

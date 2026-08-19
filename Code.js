@@ -92,7 +92,7 @@ function readDatabase() {
     
     data.push({
       id: row[0].toString(),
-      ban: row[1].toString(),
+      ban: formatBanValue(row[1]),
       name: row[2].toString(),
       kana: row[3].toString(),
       phone: row[4].toString(),
@@ -149,7 +149,7 @@ function exchangeTicket(ticketId, exchangeCount, exchangeTime) {
           exchanged_count: currentExchanged,
           exchange_time: existingTime,
           name: values[i][2].toString(),
-          ban: values[i][1].toString(),
+          ban: formatBanValue(values[i][1]),
           tickets: appliedTickets,
           notes: values[i][9].toString()
         });
@@ -368,4 +368,15 @@ function formatDate(dateVal) {
     return Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   }
   return dateVal.toString();
+}
+
+// 班名の日付誤判定（Googleスプレッドシートの仕様による日付変換）を安全に文字列（M-d）に戻すクリーンアップ関数
+function formatBanValue(val) {
+  if (val === null || val === undefined) {
+    return "";
+  }
+  if (val instanceof Date) {
+    return (val.getMonth() + 1) + "-" + val.getDate();
+  }
+  return val.toString().trim();
 }

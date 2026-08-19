@@ -251,15 +251,17 @@ function onFormSubmit(e) {
     var namedValues = e.namedValues;
     
     // フォームの質問名から値を取得 (大文字小文字・前後のスペースを自動トリミングして安全に読み込む)
-    var email = getFormValue(namedValues, ["メールアドレス", "メール アドレス", "Email"]);
-    var name = getFormValue(namedValues, ["氏名", "お名前", "名前"]);
-    var kana = getFormValue(namedValues, ["フリガナ", "ふりがな"]);
-    var ban = getFormValue(namedValues, ["班名", "所属班"]);
-    var phone = getFormValue(namedValues, ["電話番号", "連絡先"]);
-    var ticketsStr = getFormValue(namedValues, ["チケット枚数", "枚数", "チケットの枚数"]);
+    var email = getFormValue(namedValues, ["メールアドレス", "メール アドレス", "Email", "メール"]);
+    var name = getFormValue(namedValues, ["氏名", "お名前", "名前", "代表者"]);
+    var kana = getFormValue(namedValues, ["フリガナ", "ふりがな", "かな"]);
+    var ban = getFormValue(namedValues, ["班名", "所属班", "班"]);
+    var phone = getFormValue(namedValues, ["電話番号", "連絡先", "電話", "携帯"]);
+    var ticketsStr = getFormValue(namedValues, ["チケット枚数", "枚数", "チケットの枚数", "チケット", "希望枚数", "購入枚数", "購入数"]);
     var notes = getFormValue(namedValues, ["備考", "特記事項", "メッセージ"]) || "";
     
-    var tickets = parseInt(ticketsStr, 10) || 1;
+    // 全角数字を半角に変換して安全にパース
+    var normalizedTickets = normalizeNumber(ticketsStr);
+    var tickets = parseInt(normalizedTickets, 10) || 1;
     
     if (!name || !ban || !email) {
       Logger.log("必須情報が不足しているため処理を中断しました。");
@@ -301,15 +303,36 @@ function onFormSubmit(e) {
   }
 }
 
-// 表記ブレに対応したフォーム回答の取得ヘルパー
+// 表記ブレに対応したフォーム回答の取得ヘルパー（完全一致および大文字小文字を区別しない部分一致に対応）
 function getFormValue(namedValues, keys) {
+  // 1. 完全一致で検索
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
     if (namedValues[key] && namedValues[key][0]) {
       return namedValues[key][0].toString().trim();
     }
   }
+  
+  // 2. 部分一致で検索（大文字小文字を区別せず、引数のキーワードがフォームの質問名に含まれるか）
+  var allKeys = Object.keys(namedValues);
+  for (var j = 0; j < keys.length; j++) {
+    var searchKey = keys[j].toLowerCase();
+    for (var k = 0; k < allKeys.length; k++) {
+      var formKey = allKeys[k].toLowerCase();
+      if (formKey.indexOf(searchKey) !== -1 && namedValues[allKeys[k]][0]) {
+        return namedValues[allKeys[k]][0].toString().trim();
+      }
+    }
+  }
   return "";
+}
+
+// 全角数字を半角数字に変換するヘルパー
+function normalizeNumber(str) {
+  if (!str) return "";
+  return str.toString().replace(/[０-９]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
 }
 
 // 申込者へメールを送信する

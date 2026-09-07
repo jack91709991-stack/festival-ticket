@@ -41,10 +41,12 @@ function getMasterSheet() {
 
 // GETリクエスト時の処理（データ読込）
 function doGet(e) {
-  var action = e.parameter.action;
+  var action = e.parameter ? e.parameter.action : '';
   
   if (action === 'read') {
     return readDatabase();
+  } else if (action === 'getLotteryNumbers' || action === 'lottery') {
+    return readLotteryNumbers();
   }
   
   return createJsonResponse({ error: 'Invalid GET action' });
@@ -403,3 +405,30 @@ function formatBanValue(val) {
   }
   return val.toString().trim();
 }
+
+// 抽選番号リストを取得（「抽選番号」または「抽選マスター」シートのA列、なければアクティブシート）
+function readLotteryNumbers() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("抽選番号") || ss.getSheetByName("抽選マスター");
+  
+  if (!sheet) {
+    // シートが見つからない場合は自動作成
+    sheet = ss.insertSheet("抽選番号");
+    sheet.getRange(1, 1).setValue("抽選番号").setFontWeight("bold").setBackground("#fef3c7");
+    sheet.setFrozenRows(1);
+    return createJsonResponse({ numbers: [] });
+  }
+
+  var rows = sheet.getDataRange().getValues();
+  var numbers = [];
+  
+  for (var i = 1; i < rows.length; i++) {
+    var val = rows[i][0];
+    if (val !== null && val !== undefined && val.toString().trim() !== "") {
+      numbers.push(val.toString().trim());
+    }
+  }
+  
+  return createJsonResponse({ numbers: numbers });
+}
+

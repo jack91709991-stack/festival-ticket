@@ -121,6 +121,17 @@ function formatBanDisplay(ban) {
   return banStr;
 }
 
+// XSS対策用 HTMLエスケープヘルパー
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Database Operations
 function loadDatabase() {
   const localData = localStorage.getItem('festival_tickets_db');
@@ -1133,3 +1144,4 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+

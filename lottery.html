@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お祭り大抽選会システム</title>
+  <meta name="description" content="お祭りやイベント向けの大迫力抽選会アプリ。スプレッドシート連携、当日即時追加、当選履歴・引換消去、不在無効化、選べる効果音完備。">
+  
+  <meta name="theme-color" content="#060b16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="icon-192.png">
+  
+  <!-- Fonts: Outfit & M PLUS 1p -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=M+PLUS+1p:wght@400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="lottery.css">
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo">
+        <i class="fa-solid fa-gift gold-glow-icon"></i>
+        <h1>お祭り<span>大抽選会</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="btn-toggle-fullscreen" class="btn btn-secondary-neon btn-sm" title="プロジェクター・大画面表示">
+          <i class="fa-solid fa-expand"></i> 大画面モード
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-content">
+    
+    <!-- Top Nav Tabs for Lottery Sub-views -->
+    <nav class="lottery-top-nav">
+      <button class="nav-tab-btn active" data-tab="tab-stage">
+        <i class="fa-solid fa-play-circle"></i> 抽選ステージ
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-winners">
+        <i class="fa-solid fa-award"></i> 当選・引換管理 <span class="badge-pill" id="badge-nav-active">0</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-numbers">
+        <i class="fa-solid fa-database"></i> 抽選番号データ <span class="badge-pill" id="badge-nav-pool">0</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-sound">
+        <i class="fa-solid fa-sliders"></i> 演出・効果音
+      </button>
+    </nav>
+
+    <!-- SECTION 1: Lottery Main Stage (抽選メインステージ) -->
+    <section id="tab-stage" class="lottery-panel active">
+      <div class="lottery-stage-card" id="lottery-stage">
+        
+        <!-- Controls Top Bar -->
+        <div class="lottery-controls-top">
+          <div class="prize-selector-group">
+            <label for="lottery-prize-select"><i class="fa-solid fa-award"></i> 等賞:</label>
+            <select id="lottery-prize-select" class="form-select prize-select">
+              <option value="特賞 👑">👑 特賞</option>
+              <option value="1等 🥇" selected>🥇 1等</option>
+              <option value="2等 🥈">🥈 2等</option>
+              <option value="3等 🥉">🥉 3等</option>
+              <option value="4等 🎖️">🎖️ 4等</option>
+              <option value="5等 🎗️">🎗️ 5等</option>
+              <option value="特別賞 🌟">🌟 特別賞</option>
+              <option value="ラッキー賞 🍀">🍀 ラッキー賞</option>
+              <option value="custom">✏️ カスタム入力...</option>
+            </select>
+            <input type="text" id="lottery-prize-custom" class="form-input prize-custom-input hidden" placeholder="賞の名前を入力">
+          </div>
+
+          <div class="sound-quick-selector">
+            <label for="lottery-sound-theme"><i class="fa-solid fa-volume-high"></i> 効果音:</label>
+            <select id="lottery-sound-theme" class="form-select sound-select">
+              <option value="festival">🏮 お祭り和風 (太鼓・拍子木)</option>
+              <option value="casino" selected>🎰 カジノステージ (ドラムロール)</option>
+              <option value="cyber">🚀 サイバー (電子ルーレット)</option>
+              <option value="retro">🎮 8bitレトロ (ピコピコ)</option>
+              <option value="mute">🔇 静音 (音なし)</option>
+            </select>
+            <button id="btn-test-sound" class="btn btn-icon btn-sm" title="効果音を試聴"><i class="fa-solid fa-play"></i></button>
+          </div>
+        </div>
+
+        <!-- Digital Reel Display -->
+        <div class="lottery-display-area">
+          <div class="lottery-current-prize" id="lottery-display-prize">🥇 1等 抽選中</div>
+          <div class="digital-reel-box" id="reel-box">
+            <div class="reel-glow"></div>
+            <div class="reel-number" id="reel-number">----</div>
+          </div>
+          <div class="lottery-status-msg" id="lottery-status-msg">抽選ボタンを押してください</div>
+        </div>
+
+        <!-- Lottery Action Buttons -->
+        <div class="lottery-actions">
+          <button id="btn-lottery-start" class="btn btn-lottery-start">
+            <i class="fa-solid fa-play"></i> 抽選スタート！
+          </button>
+          <button id="btn-lottery-stop" class="btn btn-lottery-stop hidden">
+            <i class="fa-solid fa-hand"></i> ストップ！
+          </button>
+        </div>
+
+        <!-- Pool Quick Stat -->
+        <div class="lottery-pool-bar">
+          <div class="pool-stat">
+            <span class="stat-lbl">未抽選番号:</span>
+            <strong id="lottery-remaining-count" class="text-gold">0</strong> / <span id="lottery-total-count">0</span> 件
+          </div>
+          <div class="pool-stat">
+            <span class="stat-lbl">引換待ち:</span>
+            <strong id="lottery-won-count" class="text-neon-cyan">0</strong> 件
+          </div>
+          <div class="pool-stat">
+            <span class="stat-lbl">引換完了:</span>
+            <strong id="lottery-claimed-count" class="text-neon-green">0</strong> 件
+          </div>
+          <div class="pool-stat">
+            <span class="stat-lbl">不在・無効:</span>
+            <strong id="lottery-invalid-count" class="text-neon-red">0</strong> 件
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Recent Winners Carousel / Grid Preview -->
+      <div class="card recent-winners-preview">
+        <div class="section-title-row">
+          <h3><i class="fa-solid fa-gift text-gold"></i> 現在の当選中（引換待ち）一覧</h3>
+          <span class="section-note">※景品をお渡ししたら「引換完了」を押してください</span>
+        </div>
+        <div class="winners-grid" id="stage-active-winners-list">
+          <div class="empty-state">
+            <i class="fa-solid fa-gift"></i>
+            <p>まだ当選番号はありません。「抽選スタート」で抽選を行いましょう！</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: Winner & Claim Management (当選・引換管理) -->
+    <section id="tab-winners" class="lottery-panel">
+      <div class="card lottery-management-card">
+        <div class="management-header">
+          <div class="tabs-header-sub">
+            <button class="sub-tab-btn active" data-subtab="sub-active">
+              <i class="fa-solid fa-gift"></i> 当選中（引換待ち） <span class="badge-mini" id="badge-active-count">0</span>
+            </button>
+            <button class="sub-tab-btn" data-subtab="sub-exchanged">
+              <i class="fa-solid fa-circle-check"></i> 引換完了 <span class="badge-mini" id="badge-exchanged-count">0</span>
+            </button>
+            <button class="sub-tab-btn" data-subtab="sub-invalid">
+              <i class="fa-solid fa-ban"></i> 不在・無効 <span class="badge-mini" id="badge-invalid-count">0</span>
+            </button>
+          </div>
+          <div class="management-actions-top">
+            <button id="btn-export-lottery" class="btn btn-secondary-neon btn-sm"><i class="fa-solid fa-download"></i> 当選結果出力</button>
+          </div>
+        </div>
+
+        <!-- Subtab 1: Active Winners (引換待ち) -->
+        <div id="sub-active" class="lottery-subtab-panel active">
+          <p class="section-hint">※景品をお渡ししたら「引換完了」を押して消去（アーカイブ）してください。不在の場合は「不在・無効」を押すと再抽選から除外されます。</p>
+          <div class="winners-grid" id="winners-active-list">
+            <div class="empty-state">
+              <i class="fa-solid fa-gift"></i>
+              <p>現在引換待ちの当選番号はありません。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab 2: Exchanged Winners (引換済) -->
+        <div id="sub-exchanged" class="lottery-subtab-panel">
+          <p class="section-hint text-success">※景品の引き換えが完了した番号の一覧です。「戻す」ボタンで引換待ちに戻すことも可能です。</p>
+          <div class="table-container">
+            <table class="lottery-table">
+              <thead>
+                <tr>
+                  <th>等賞</th>
+                  <th>当選番号</th>
+                  <th>当選日時</th>
+                  <th>引換完了日時</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="winners-exchanged-tbody">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Subtab 3: Invalid / Absent (不在・無効) -->
+        <div id="sub-invalid" class="lottery-subtab-panel">
+          <p class="section-hint text-warning">※不在等で無効化された番号です（再抽選プールには戻りません）。</p>
+          <div class="table-container">
+            <table class="lottery-table">
+              <thead>
+                <tr>
+                  <th>等賞</th>
+                  <th>無効番号</th>
+                  <th>当選日時</th>
+                  <th>無効化日時</th>
+                  <th>ステータス</th>
+                </tr>
+              </thead>
+              <tbody id="winners-invalid-tbody">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Number Pool Management (抽選番号データ管理) -->
+    <section id="tab-numbers" class="lottery-panel">
+      <div class="card lottery-data-card">
+        <div class="panel-header-simple">
+          <h2><i class="fa-solid fa-database text-neon-cyan"></i> 抽選対象番号の管理 ＆ データ読み込み</h2>
+          <p class="panel-desc">スプレッドシート同期、当日入会者への追加発券、連番生成などに対応しています。</p>
+        </div>
+
+        <div class="data-methods-grid">
+          <!-- Method 1: Spreadsheet Read -->
+          <div class="method-box">
+            <h4><i class="fa-solid fa-table"></i> Googleスプレッドシートから読み取り</h4>
+            <p class="method-desc">公開スプレッドシートのCSV URLまたはGAS Web App URLから番号列を自動読込します。</p>
+            <div class="form-group">
+              <input type="url" id="lottery-sheet-url" class="form-input" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv または GAS URL">
+            </div>
+            <div class="btn-row">
+              <button id="btn-sync-lottery-sheet" class="btn btn-primary btn-sm"><i class="fa-solid fa-rotate"></i> スプレッドシートから番号取得</button>
+              <button id="btn-save-lottery-url" class="btn btn-secondary-neon btn-sm"><i class="fa-solid fa-save"></i> URL保存</button>
+            </div>
+          </div>
+
+          <!-- Method 2: Instant Add (当日追加・連番・テキスト貼り付け) -->
+          <div class="method-box">
+            <h4><i class="fa-solid fa-plus-circle"></i> 当日追加 ＆ 連番一括生成</h4>
+            <p class="method-desc">当日入会者への追加発券や、番号の即時追加・連番生成が可能です。</p>
+            <div class="instant-add-row">
+              <input type="text" id="lottery-quick-add-input" class="form-input" placeholder="例: 105 または 201-250 (範囲追加)">
+              <button id="btn-lottery-quick-add" class="btn btn-success btn-sm"><i class="fa-solid fa-plus"></i> 追加する</button>
+            </div>
+            <div class="instant-gen-row">
+              <input type="number" id="lottery-gen-start" class="form-input" placeholder="開始" value="1" style="width: 80px;">
+              <span>〜</span>
+              <input type="number" id="lottery-gen-end" class="form-input" placeholder="終了" value="200" style="width: 80px;">
+              <input type="number" id="lottery-gen-digits" class="form-input" placeholder="桁数" value="3" style="width: 70px;" title="ゼロ埋め桁数">
+              <button id="btn-lottery-gen" class="btn btn-secondary-neon btn-sm"><i class="fa-solid fa-wand-magic-sparkles"></i> 連番生成</button>
+            </div>
+          </div>
+
+          <!-- Method 3: CSV / Text Paste -->
+          <div class="method-box">
+            <h4><i class="fa-solid fa-file-csv"></i> CSV / テキスト一括貼り付け</h4>
+            <p class="method-desc">改行区切りやカンマ区切りの番号リストを貼り付けて一括登録します。</p>
+            <textarea id="lottery-bulk-paste-text" class="form-input" rows="3" placeholder="A-001&#10;A-002&#10;A-003 または 001,002,003..."></textarea>
+            <div class="btn-row">
+              <button id="btn-lottery-bulk-import" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-import"></i> リストを取り込む (追加)</button>
+              <button id="btn-lottery-bulk-replace" class="btn btn-danger-neon btn-sm"><i class="fa-solid fa-rotate-left"></i> 全置換</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pool Numbers List Preview -->
+        <div class="pool-preview-section">
+          <div class="pool-preview-header">
+            <span class="preview-title"><i class="fa-solid fa-list-ol"></i> 登録中の番号一覧 (<span id="preview-total-count">0</span>件)</span>
+            <div class="preview-actions">
+              <input type="text" id="pool-search-input" class="form-input form-input-sm" placeholder="番号を検索...">
+              <button id="btn-clear-lottery-pool" class="btn btn-danger-neon btn-sm"><i class="fa-solid fa-trash"></i> 抽選プール全初期化</button>
+            </div>
+          </div>
+          <div class="pool-chips-container" id="pool-chips-list">
+            <!-- Dynamic chips -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: Sound & Presentation Settings (演出・効果音設定) -->
+    <section id="tab-sound" class="lottery-panel">
+      <div class="card settings-card">
+        <div class="panel-header-simple">
+          <h2><i class="fa-solid fa-sliders text-gold"></i> 演出 ＆ サウンド詳細設定</h2>
+          <p class="panel-desc">会場の雰囲気に合わせて効果音テーマや演出スピードをカスタマイズできます。</p>
+        </div>
+
+        <div class="sound-settings-grid">
+          <div class="sound-card-option" data-theme="festival">
+            <div class="sound-card-header">
+              <i class="fa-solid fa-drum text-gold"></i>
+              <h4>🏮 お祭り和風モード</h4>
+            </div>
+            <p>拍子木と力強い和太鼓のドンドコビート、銅鑼とお祭りメロディで日本の縁日感を演出。</p>
+            <button class="btn btn-secondary-neon btn-sm btn-play-sample" data-theme="festival"><i class="fa-solid fa-play"></i> 試聴する</button>
+          </div>
+
+          <div class="sound-card-option" data-theme="casino">
+            <div class="sound-card-header">
+              <i class="fa-solid fa-champagne-glasses text-neon-cyan"></i>
+              <h4>🎰 カジノステージモード</h4>
+            </div>
+            <p>王道のスネアドラムロールとシンバルクラッシュ、華やかなゴージャスブラスファンファーレ。</p>
+            <button class="btn btn-secondary-neon btn-sm btn-play-sample" data-theme="casino"><i class="fa-solid fa-play"></i> 試聴する</button>
+          </div>
+
+          <div class="sound-card-option" data-theme="cyber">
+            <div class="sound-card-header">
+              <i class="fa-solid fa-microchip text-neon-blue"></i>
+              <h4>🚀 サイバーモード</h4>
+            </div>
+            <p>高速電子ルーレット音と近未来感のあるシンセサイザーファンファーレ。</p>
+            <button class="btn btn-secondary-neon btn-sm btn-play-sample" data-theme="cyber"><i class="fa-solid fa-play"></i> 試聴する</button>
+          </div>
+
+          <div class="sound-card-option" data-theme="retro">
+            <div class="sound-card-header">
+              <i class="fa-solid fa-gamepad text-neon-purple"></i>
+              <h4>🎮 8bitレトロゲームモード</h4>
+            </div>
+            <p>ファミコン風の矩形波ピコピコ抽選音とレトロなレベルアップファンファーレ。</p>
+            <button class="btn btn-secondary-neon btn-sm btn-play-sample" data-theme="retro"><i class="fa-solid fa-play"></i> 試聴する</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Confetti Canvas for Celebration -->
+  <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+  <!-- Winner Modal (Announce Dialog) -->
+  <div id="winner-modal" class="winner-modal hidden">
+    <div class="winner-modal-card">
+      <div class="winner-trophy-anim">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+      <h3 id="modal-prize-title" class="winner-prize-name">🥇 1等 当選！</h3>
+      <div class="winner-big-number" id="modal-winner-number">000</div>
+      <p class="winner-congrats">おめでとうございます！！</p>
+      <div class="winner-modal-actions">
+        <button id="btn-modal-claim" class="btn btn-primary btn-lg"><i class="fa-solid fa-gift"></i> 今すぐ引換完了</button>
+        <button id="btn-modal-keep" class="btn btn-secondary-neon"><i class="fa-solid fa-clock"></i> 引換待ちに保持</button>
+        <button id="btn-modal-absent" class="btn btn-danger-neon"><i class="fa-solid fa-ban"></i> 不在 (無効化して次へ)</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lottery.js" defer></script>
+</body>
+</html>
